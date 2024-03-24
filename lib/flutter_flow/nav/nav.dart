@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:box_migration_app/pages/loginPage.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:page_transition/page_transition.dart';
 
+import '../../BLOCS/authBloc/authbloc_bloc.dart';
 import '/index.dart';
 import '/main.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
@@ -16,6 +18,12 @@ export 'package:go_router/go_router.dart';
 export 'serialization_util.dart';
 
 const kTransitionInfoKey = '__transition_info__';
+
+Future<String> getStorage() async {
+  String? isLogged = await storage.read(key: 'isLogged');
+
+  return isLogged.toString();
+}
 
 class AppStateNotifier extends ChangeNotifier {
   AppStateNotifier._();
@@ -40,12 +48,33 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         FFRoute(
           name: '_initialize',
           path: '/',
-          builder: (context, _) => HomePageWidget(),
+          builder: (context, _) {
+            return FutureBuilder<String>(
+              future: getStorage(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final isLogged = snapshot.data;
+                  if (isLogged == "true") {
+                    return HomePageWidget();
+                  } else {
+                    return LoginPage();
+                  }
+                } else {
+                  return LoginPage();
+                }
+              },
+            );
+          },
         ),
         FFRoute(
           name: 'HomePage',
           path: '/homePage',
           builder: (context, params) => HomePageWidget(),
+        ),
+        FFRoute(
+          name: 'Login',
+          path: '/loginPage',
+          builder: (context, params) => LoginPage(),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
     );

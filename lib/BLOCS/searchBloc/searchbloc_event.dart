@@ -1,4 +1,14 @@
-part of 'searchbloc_bloc.dart';
+import 'package:equatable/equatable.dart';
 
-@immutable
-abstract class SearchblocEvent {}
+class SearchEvent extends Equatable {
+  const SearchEvent();
+
+  @override
+  List<Object> get props => [];
+}
+
+class SearchBox extends SearchEvent {
+  final String searchContent;
+
+  SearchBox(this.searchContent);
+}

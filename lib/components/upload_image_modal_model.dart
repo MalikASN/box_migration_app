@@ -18,9 +18,11 @@ class UploadImageModalModel extends FlutterFlowModel {
   // State field(s) for TextField widget.
   TextEditingController? textController;
   String? Function(BuildContext, String?)? textControllerValidator;
+
+  var geolocationController;
   String? _textControllerValidator(BuildContext context, String? val) {
     if (val == null || val.isEmpty) {
-      return 'Field is required';
+      return 'Ce champ est requis';
     }
 
     if (!RegExp('^[A-Z]+-[0-9]{6}\$').hasMatch(val)) {
@@ -51,7 +53,15 @@ class UploadImageModalModel extends FlutterFlowModel {
     );
   }
 
+  String? geolocValidator(String value) {
+    if (value!.isEmpty) {
+      return 'Ce champ est requis';
+    } else {
+      return null; // Return null if the input is valid
+    }
+  }
+}
   /// Action blocks are added here.
 
   /// Additional helper methods are added here.
-}
+
