@@ -52,13 +52,10 @@ Future<String> createFolderInAppDocDir(String folderName) async {
 void main() async {
   // Initialize SharedPreferences
   WidgetsFlutterBinding.ensureInitialized();
+  createFolderInAppDocDir("boxImgs");
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  DbHelper dbHelper = new DbHelper();
+  DbHelper dbHelper = new DbHelper("assets/csv/boxes.csv");
   dbHelper.initDatabase();
-  // Check if batchNumber is empty and set default value if necessary
-  if (prefs.getString("batchNumber")?.isEmpty ?? true) {
-    prefs.setString('batchNumber', "Z6_1");
-  }
 
   if (prefs.getString("IP")?.isEmpty ?? true) {
     prefs.setString('IP', "http://192.165.1.35");

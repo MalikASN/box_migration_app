@@ -9,7 +9,7 @@ import 'package:box_migration_app/HELPERS/db_class.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+//import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../BLOCS/SaveImageBloc/save_image_bloc_bloc.dart';
@@ -42,9 +42,9 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
   bool isBoxExisting = false;
   int doneBoxes = 0;
   int progression = 0;
-  int batchSize = 2;
-  String ocrContent = "";
+  int batchSize = 200;
   final TextEditingController geolocController = TextEditingController();
+
   final _barcodeScanner = BarcodeScanner();
 
   bool isTransferred = false;
@@ -56,20 +56,13 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
     _model.onUpdate();
   }
 
-  /*Future<void> getNumOfImgs(String dir) async {
+  Future<int> getNumOfImgs(String dir) async {
     final Directory fixedDir = await getApplicationDocumentsDirectory();
+
     Directory targetDir = Directory("${fixedDir.path}/$dir");
     int numOfImgsInside = await targetDir.list(recursive: false).length;
-    setState(() {
-      doneBoxes = numOfImgsInside;
-    });
-    if (doneBoxes == batchSize) {
-      setState(() {
-        modalHeight = 250;
-        isTransferred = true;
-      });
-    }
-  }*/
+    return numOfImgsInside;
+  }
 
   @override
   void initState() {
@@ -77,67 +70,19 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
     _model = createModel(context, () => UploadImageModalModel());
     _model.textController ??= TextEditingController();
     _barcodeScanner.initializeCamera();
+
     _initializeState(); // Just call the method directly, no need to store the future
   }
 
   void _initializeState() async {
-    String batchNumber = await _loadPreferences();
-    _loadBoxCount(batchNumber);
-  }
-
-  void _loadBoxCount(String batchNumber) async {
-    DbHelper dbHelper = DbHelper();
-    try {
-      int value = await dbHelper.countNumOfBoxes(batchNumber);
-      setState(() {
-        doneBoxes = value;
-      });
-    } catch (error) {
-      // Handle any errors that occurred during the database operation
-      print("Error loading box count: $error");
-    }
-  }
-
-  Future<String> _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString("batchNumber") ?? ""; // Handle null case
-  }
-
-  Future<void> Refresh() async {
-    _model.resetForm();
-    setState(() {
-      ocrContent = "";
-    });
-  }
-
-  Future<void> ProcessImage(FFUploadedFile image) async {
-    final InputImage inputImage =
-        InputImage.fromFilePath(image.name.toString());
-
-    final textRecognizer = TextRecognizer();
-    print(inputImage.filePath);
-    final RecognizedText recognizedText =
-        await textRecognizer.processImage(inputImage);
-    String extractedText = recognizedText.text;
-    setState(() {
-      ocrContent = extractedText;
-    });
-  }
-
-  String processString(String str) {
-    str = str.replaceAll('\n', '_');
-    int i = 0;
-    while (i < str.length - 1) {
-      if (str[i] == '_' && str[i + 1] != '_') {
-        str = str.replaceRange(i, i + 1, ' ');
-        i++;
-      } else if (str[i] == '_' && str[i + 1] == '_') {
-        str = str.replaceRange(i, i + 1, '');
-      } else {
-        i++;
-      }
+    String bs = prefs.get("batchSize").toString();
+    if (bs.isNotEmpty) {
+      setState(() {
+        batchSize = int.parse(bs);
+      });
     }
-    return str;
+    getNumOfImgs("boxImgs");
   }
 
   Future<void> takePicture() async {
@@ -169,7 +114,6 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
         setState(() {
           _model.uploadedLocalFile = selectedUploadedFiles.first;
         });
-        ProcessImage(_model.uploadedLocalFile);
       }
     }
   }
@@ -179,10 +123,6 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
     _model.maybeDispose();
     _barcodeScanner.dispose();
     super.dispose();
-  }
-
-  bool validateOcr(String value) {
-    return RegExp('^[A-Z]+-[0-9]{6}\$').hasMatch(value);
   }
 
   Future<String> _onScanButtonPressed() async {
@@ -235,7 +175,6 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
                             progression = 0;
                             modalHeight = 700;
                             doneBoxes = 0;
-                            ocrContent = "";
                           });
                           // getNumOfImgs("ImgsBatch");
                         }
@@ -260,16 +199,6 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
                     Container(
                       margin: EdgeInsets.only(top: 50),
                       child: ListTile(
-                        trailing: IconButton(
-                          icon: Icon(Icons.send_and_archive_rounded,
-                              color: FlutterFlowTheme.of(context)
-                                  .secondaryBackground),
-                          onPressed: () => {
-                            context
-                                .read<ExportbatchblocBloc>()
-                                .add(ExportEvent())
-                          },
-                        ),
                         title: Text(
                           "Lot en cours",
                           style: TextStyle(
@@ -356,6 +285,32 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
                       mainAxisSize: MainAxisSize.max,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        BlocListener<ExportbatchblocBloc, ExportbatchblocState>(
+                          listener: (context, state) {
+                            if (state is ExportbatchblocLoading) {
+                              setState(() {
+                                isLoading = true;
+                              });
+                            }
+
+                            if (state is ExportbatchblocFinished) {
+                              setState(() {
+                                isLoading = false;
+                                isTransferred = false;
+                                progression = 0;
+                                modalHeight = 700;
+                                doneBoxes = 0;
+                              });
+                            }
+                            if (state is ExportbatchblocError) {
+                              setState(() {
+                                isLoading = false;
+                                exportMsg = state.errorMsg.toString();
+                              });
+                            }
+                          },
+                          child: Container(),
+                        ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -388,9 +343,17 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
                               fontSize: 18, // You can adjust the font size here
                             ),
                           ),
-                          trailing: Icon(
-                            Icons.batch_prediction_rounded,
-                            size: 30, // You can adjust the icon size here
+                          trailing: IconButton(
+                            icon: Icon(Icons.send_and_archive_outlined,
+                                color: Colors.white),
+                            onPressed: () => {
+                              if (doneBoxes > 0)
+                                {
+                                  context
+                                      .read<ExportbatchblocBloc>()
+                                      .add(ExportEvent())
+                                }
+                            },
                           ),
                         ),
                         Padding(
@@ -498,7 +461,6 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
                                                   size: 40)),
                                     ),
                                   ),
-                                  Text(processString(ocrContent)),
                                 ],
                               ),
                             ),
@@ -753,42 +715,35 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
                                 BlocListener<SaveImageBlocBloc, SaveImageState>(
                                     listener: (context, state) async {
                                       if (state is SaveImageSuccess) {
-                                        SharedPreferences prefs =
-                                            await SharedPreferences
-                                                .getInstance();
-                                        DbHelper dbHelper = new DbHelper();
-                                        dbHelper
-                                            .countNumOfBoxes(prefs
-                                                .getString("batchNumber")
-                                                .toString())
-                                            .then((value) {
+                                        int numboxes =
+                                            await getNumOfImgs("boxImgs");
+
+                                        if (numboxes == batchSize) {
                                           setState(() {
-                                            isLoading = false;
-                                            doneBoxes = value;
-                                            containerContent = "La boîte " +
-                                                _model.textController.text +
-                                                " a été enregistrée.";
-                                            modalHeight = 700.0;
-                                            isSaved = "saved";
-                                            _model.textController?.clear();
-                                            _model.uploadedLocalFile =
-                                                FFUploadedFile(
-                                              name: null,
-                                              bytes: Uint8List.fromList([]),
-                                              height: null,
-                                              width: null,
-                                              blurHash: null,
-                                            );
+                                            modalHeight = 250;
+                                            isTransferred = true;
                                           });
-                                        }).then((_) {
-                                          if (doneBoxes < batchSize) {
-                                            Refresh();
-                                          } else {
-                                            setState(() {
-                                              isTransferred = true;
-                                              modalHeight = 300;
-                                            });
-                                          }
+                                        } else {
+                                          takePicture();
+                                        }
+
+                                        setState(() {
+                                          doneBoxes = numboxes;
+                                          isLoading = false;
+                                          containerContent = "La boîte " +
+                                              _model.textController.text +
+                                              " a été enregistrée.";
+                                          modalHeight = 700.0;
+                                          isSaved = "saved";
+                                          _model.textController?.clear();
+                                          _model.uploadedLocalFile =
+                                              FFUploadedFile(
+                                            name: null,
+                                            bytes: Uint8List.fromList([]),
+                                            height: null,
+                                            width: null,
+                                            blurHash: null,
+                                          );
                                         });
 
                                         const bannerDuration =
@@ -840,7 +795,7 @@ class _UploadImageModalWidgetState extends State<UploadImageModalWidget> {
                                           SaveimageEvent(
                                               _model.textController.text,
                                               geolocController.text,
-                                              processString(ocrContent)));
+                                              _model.uploadedLocalFile));
                                     }
 
                                     if (_model.formKey.currentState == null ||

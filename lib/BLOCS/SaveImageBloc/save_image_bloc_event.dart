@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:box_migration_app/flutter_flow/flutter_flow_util.dart';
 import 'package:equatable/equatable.dart';
 
 class SaveImage extends Equatable {
@@ -12,7 +13,7 @@ class SaveImage extends Equatable {
 class SaveimageEvent extends SaveImage {
   final String barcode;
   final String geolocalisation;
-  final String description;
+  final FFUploadedFile file;
 
-  SaveimageEvent(this.barcode, this.geolocalisation, this.description);
+  SaveimageEvent(this.barcode, this.geolocalisation, this.file);
 }

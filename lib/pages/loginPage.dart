@@ -23,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController IpController = TextEditingController();
+  final TextEditingController BScontroller = TextEditingController();
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _LoginPageState extends State<LoginPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       IpController.text = prefs.get('IP').toString();
+      BScontroller.text = prefs.get('batchSize').toString();
     });
   }
 
@@ -100,49 +102,136 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       Container(
                         padding: EdgeInsets.all(30),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Column(
                           children: [
-                            Expanded(
-                              // Wrap the first widget with Expanded
-                              child: Material(
-                                borderRadius: BorderRadius.circular(10),
-                                elevation: 2,
-                                child: Container(
-                                  padding: EdgeInsets.all(5),
-                                  height: 55,
-                                  child: TextFormField(
-                                    controller: IpController,
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: '10.xx.xx.xx',
-                                      icon: Icon(
-                                        Icons.numbers,
-                                        color: FlutterFlowTheme.of(context)
-                                            .primary,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  // Wrap the first widget with Expanded
+                                  child: Material(
+                                    borderRadius: BorderRadius.circular(10),
+                                    elevation: 2,
+                                    child: Container(
+                                      padding: EdgeInsets.all(5),
+                                      height: 55,
+                                      child: TextFormField(
+                                        controller: IpController,
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: '10.xx.xx.xx',
+                                          icon: Icon(
+                                            Icons.numbers,
+                                            color: FlutterFlowTheme.of(context)
+                                                .primary,
+                                          ),
+                                        ),
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        validator: (value) {
+                                          if (value!.isEmpty) {
+                                            return 'Please enter the IP';
+                                          }
+                                        },
                                       ),
                                     ),
-                                    keyboardType: TextInputType.emailAddress,
-                                    validator: (value) {
-                                      if (value!.isEmpty) {
-                                        return 'Please enter the IP';
-                                      }
-                                    },
                                   ),
                                 ),
-                              ),
+                                IconButton(
+                                  onPressed: () async {
+                                    SharedPreferences prefs =
+                                        await SharedPreferences.getInstance();
+                                    prefs.setString(
+                                        'IP', IpController.text.toString());
+                                    final snackbar = SnackBar(
+                                      backgroundColor:
+                                          Color.fromARGB(255, 42, 190, 1),
+                                      content: Row(
+                                        children: [
+                                          Icon(Icons.error,
+                                              color: Colors.white),
+                                          SizedBox(width: 10),
+                                          Text("Adresse IP sauvegardée",
+                                              style: TextStyle(
+                                                  color: Colors.white)),
+                                        ],
+                                      ),
+                                    );
+
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackbar);
+                                  },
+                                  icon: Icon(
+                                    Icons.send,
+                                    color: FlutterFlowTheme.of(context).primary,
+                                  ),
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              onPressed: () async {
-                                SharedPreferences prefs =
-                                    await SharedPreferences.getInstance();
-                                prefs.setString(
-                                    'IP', IpController.text.toString());
-                              },
-                              icon: Icon(
-                                Icons.send,
-                                color: FlutterFlowTheme.of(context).primary,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  // Wrap the first widget with Expanded
+                                  child: Material(
+                                    borderRadius: BorderRadius.circular(10),
+                                    elevation: 2,
+                                    child: Container(
+                                      padding: EdgeInsets.all(5),
+                                      height: 55,
+                                      child: TextFormField(
+                                        controller: BScontroller,
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: 'ex : 10',
+                                          icon: Icon(
+                                            Icons.numbers,
+                                            color: FlutterFlowTheme.of(context)
+                                                .primary,
+                                          ),
+                                        ),
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        validator: (value) {
+                                          if (value!.isEmpty ||
+                                              int.parse(value) <= 0) {
+                                            return 'Please entera valid batch size';
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () async {
+                                    SharedPreferences prefs =
+                                        await SharedPreferences.getInstance();
+                                    prefs.setString('batchSize',
+                                        BScontroller.text.toString());
+                                    final snackbar = SnackBar(
+                                      backgroundColor:
+                                          Color.fromARGB(255, 42, 190, 1),
+                                      content: Row(
+                                        children: [
+                                          Icon(Icons.error,
+                                              color: Colors.white),
+                                          SizedBox(width: 10),
+                                          Text("Taille du lot sauvegardée",
+                                              style: TextStyle(
+                                                  color: Colors.white)),
+                                        ],
+                                      ),
+                                    );
+
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackbar);
+                                  },
+                                  icon: Icon(
+                                    Icons.send,
+                                    color: FlutterFlowTheme.of(context).primary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

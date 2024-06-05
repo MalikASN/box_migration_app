@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:bloc/bloc.dart';
 import 'package:box_migration_app/BLOCS/SaveImageBloc/save_image_bloc_event.dart';
 import 'package:box_migration_app/BLOCS/SaveImageBloc/save_image_bloc_state.dart';
@@ -20,9 +21,17 @@ class SaveImageBlocBloc extends Bloc<SaveImage, SaveImageState> {
     on<SaveimageEvent>((event, emit) async {
       try {
         emit(SaveImageLoading());
-        DbHelper dbHelper = DbHelper();
-        await dbHelper.inserRow(
-            event.barcode, event.geolocalisation, event.description);
+        DbHelper dbHelper = DbHelper("assets/csv/boxes.csv");
+        final Directory fixedDir = await getApplicationDocumentsDirectory();
+
+        Directory targetDir = Directory("${fixedDir.path}/boxImgs");
+
+        final file =
+            File('${targetDir.path}/${event.barcode}_${event.geolocalisation}');
+
+        Uint8List listInt = await compressImg(event.file.bytes!);
+        await file.writeAsBytes(listInt);
+        await dbHelper.inserRow(event.barcode, event.geolocalisation);
 
         emit(SaveImageSuccess());
       } catch (e) {
@@ -30,4 +39,9 @@ class SaveImageBlocBloc extends Bloc<SaveImage, SaveImageState> {
       }
     });
   }
+}
+
+Future<Uint8List> compressImg(Uint8List list) async {
+  var result = await FlutterImageCompress.compressWithList(list, quality: 50);
+  return result;
 }

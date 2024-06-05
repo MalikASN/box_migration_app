@@ -7,9 +7,9 @@ import 'package:csv/csv.dart';
 import 'package:path/path.dart';
 
 class DbHelper {
-  // final String csvpath;
+  final String csvpath;
 
-  DbHelper();
+  DbHelper(this.csvpath);
 
   Future<void> initDatabase() async {
     final dbPath = join(await getDatabasesPath(), 'boxes.db');
@@ -26,7 +26,7 @@ class DbHelper {
             batchNumber TEXT
           )
         ''');
-        //await insertDataFromCSV(db);
+        await insertDataFromCSV(db);
       },
       version: 1,
     );
@@ -34,7 +34,7 @@ class DbHelper {
 
 // Rest of the code remains the same
 
-  /* Future<void> insertDataFromCSV(Database db) async {
+  Future<void> insertDataFromCSV(Database db) async {
     String csvData = await rootBundle.loadString(this.csvpath);
     List<List<dynamic>> csvTable = CsvToListConverter().convert(csvData);
     Batch batch = db.batch();
@@ -48,7 +48,7 @@ class DbHelper {
       });
     }
     await batch.commit();
-  }*/
+  }
 
   Future<bool> checkBoxExistance(String barcode) async {
     Database database = await openDatabase(
@@ -64,14 +64,12 @@ class DbHelper {
   }
 
   Future<List<Map<String, dynamic>>> getAllBoxes() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String bn = prefs.getString("batchNumber").toString();
     Database database = await openDatabase(
       join(await getDatabasesPath(), 'boxes.db'),
     );
 
     List<Map<String, dynamic>> result = await database.rawQuery(
-      "SELECT barcode, designation, geolocalisation FROM boxes WHERE batchNumber='$bn'",
+      "SELECT barcode, designation, geolocalisation FROM boxes",
     );
 
     database.close();
@@ -79,23 +77,16 @@ class DbHelper {
     return result;
   }
 
-  Future<void> inserRow(
-      String barcode, String geolocalisation, String description) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future<void> inserRow(String barcode, String geolocalisation) async {
     Database database = await openDatabase(
       join(await getDatabasesPath(), 'boxes.db'),
     );
-    await database.insert('boxes', {
-      "barcode": barcode,
-      'designation': description,
-      "geolocalisation": geolocalisation,
-      "batchNumber": prefs.getString("batchNumber").toString()
-    });
-
+    await database.insert(
+        'boxes', {"barcode": barcode, "geolocalisation": geolocalisation});
     database.close();
   }
 
-  Future<int> countNumOfBoxes(String batch) async {
+  /*Future<int> countNumOfBoxes(String batch) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     Database database = await openDatabase(
@@ -106,5 +97,5 @@ class DbHelper {
     );
     int count = result.isNotEmpty ? result.first['count'] as int : 0;
     return count;
-  }
+  }*/
 }

@@ -20,7 +20,7 @@ class CheckboxBloc extends Bloc<CheckboxEvent, CheckboxState> {
     on<CheckEvent>((event, emit) async {
       try {
         emit(CheckboxLoading());
-        DbHelper dbHelper = new DbHelper();
+        DbHelper dbHelper = new DbHelper("assets/csv/boxes.csv");
         bool res = await dbHelper.checkBoxExistance(event.boxBarcode);
         if (res) {
           emit(CheckboxSucess(event.boxBarcode));
