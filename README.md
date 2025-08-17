@@ -1,6 +1,6 @@
 # BoxMigrationApp
-
-A new Flutter project.
+A Flutter app for warehouse box migration
+This application lets users scan the barcode of archive boxes and store them in a database. Along with the barcode, the app also captures and saves the box description, which is automatically extracted using OCR (Optical Character Recognition).
 
 ## Getting Started
 
